@@ -23,15 +23,15 @@ const trackLength = 50;
         const nbs = await nbsViewer.read(argv.file);
 
         for (let i = 54; i <= (52 + trackLength); i++) {
-            const toWrite = Buffer.from(`execute in minecraft:the_end run clone 50 ${i} 181 62 ${i} 181 50 ${i - 1} 181 replace normal\n`);
+            const toWrite = Buffer.from(`execute in minecraft:the_end run clone 46 ${i} 181 62 ${i} 181 46 ${i - 1} 181 replace normal\n`);
 
             await trackFile.write(toWrite, 0, toWrite.length);
         }
 
-        const trackFencepost = Buffer.from(`execute in minecraft:the_end run fill 50 ${52 + trackLength} 181 62 ${52 + trackLength} 181 minecraft:air\n`);
+        const trackFencepost = Buffer.from(`execute in minecraft:the_end run fill 46 ${52 + trackLength} 181 62 ${52 + trackLength} 181 minecraft:air\n`);
         await trackFile.write(trackFencepost, 0, trackFencepost.length);
 
-        for (let i = 0; i < (2 * nbs.header.songLength + trackLength + 1); i++) {
+        for (let i = 0; i < (1 * nbs.header.songLength + trackLength + 1); i++) {
             let toWrite = void 0;
 
             // Fencepost here - first command should not be a schedule
@@ -98,8 +98,8 @@ const trackLength = 50;
             await fs.writeFile(`music/tick_${tick.tick}.mcfunction`, musicToWrite);
             await fs.writeFile(`animation/tick_${tick.tick}.mcfunction`, animationToWrite);
 
-            let scheduleToWrite = `execute in minecraft:the_end run schedule function custom:music/tick_${tick.tick} ${2 * tick.tick + tickOffset}t append\n`;
-            scheduleToWrite += `execute in minecraft:the_end run schedule function custom:animation/tick_${tick.tick} ${2 * tick.tick}t append\n`;
+            let scheduleToWrite = `execute in minecraft:the_end run schedule function custom:music/tick_${tick.tick} ${1 * tick.tick + tickOffset}t append\n`;
+            scheduleToWrite += `execute in minecraft:the_end run schedule function custom:animation/tick_${tick.tick} ${1 * tick.tick}t append\n`;
             const scheduleWriter = Buffer.from(scheduleToWrite, 'utf8');
 
             await file.write(scheduleWriter, 0, scheduleWriter.length);

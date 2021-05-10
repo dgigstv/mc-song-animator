@@ -4,16 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npx tsc"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "nbs-viewer": "file:../nbs-reader/nbs-viewer-0.0.1.tgz",
+    "nbs-viewer": "^0.0.1",
     "yargs": "^17.0.0"
   },
   "devDependencies": {
     "@types/node": "^15.0.1",
+    "@types/yargs": "^16.0.1",
     "tslib": "^2.2.0",
     "typescript": "^4.2.4"
   }
