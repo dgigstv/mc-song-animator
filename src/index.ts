@@ -8,6 +8,7 @@ import * as nbsViewer from 'nbs-viewer';
 import * as fs from 'fs/promises';
 import { hasInstrumentToBlockMapping, hasInstrumentToGlassMapping, hasWorldMapping, isValidMinecraftNote } from './guard';
 import { positionToString } from './util';
+import mkdirp from 'mkdirp';
 
 const { argv } = yargs(process.argv.slice(2))
     .options({
@@ -78,13 +79,13 @@ async function createTrackFile (mappings: Mappings, trackLength: number, trackFi
     try {
         const { track: { start: { x: startX, y: startY, z: startZ }, end: { x: endX, z: endZ } } } = mappings;
 
-        for (let y = (startY + 2); y < (startY + trackLength); y++) {
-            const toWrite = Buffer.from(`${worldCmd} clone ${startX} ${y} ${startZ} ${endX} ${y} ${endZ} ${startX} ${y - 1} ${startZ} replace normal`);
+        for (let y = (startY + 1); y < (startY + trackLength); y++) {
+            const toWrite = Buffer.from(`${worldCmd} clone ${startX} ${y} ${startZ} ${endX} ${y} ${endZ} ${startX} ${y - 1} ${startZ} replace normal\n`);
 
             await trackFile.write(toWrite, 0, toWrite.length);
         }
 
-        const trackFencepost = Buffer.from(`${worldCmd} fill ${startX} ${startY + trackLength} ${endZ} ${endX} ${startY + trackLength} ${endZ} minecraft:air\n`);
+        const trackFencepost = Buffer.from(`${worldCmd} fill ${startX} ${startY + trackLength - 1} ${endZ} ${endX} ${startY + trackLength} ${endZ} minecraft:air\n`);
 
         await trackFile.write(trackFencepost, 0, trackFencepost.length);
     } finally {
@@ -126,13 +127,19 @@ async function createPlayFile (songLength: number, playFileName: string, tickDir
 
 (async function main () {
     const { output, trackLength, world } = argv;
-    const playFileName = path.join(process.cwd(), output, constants.fileNames.main);
-    const trackFileName = path.join(process.cwd(), output, constants.fileNames.track.dir, constants.fileNames.track.fileName);
-    const tickDirName = path.join(process.cwd(), output, constants.fileNames.tickDir);
+    const outputDirName = path.join(process.cwd(), output);
+    const playFileName = path.join(outputDirName, constants.fileNames.main);
+    const trackDirName = path.join(outputDirName, constants.fileNames.track.dir);
+    const trackFileName = path.join(trackDirName, constants.fileNames.track.fileName);
+    const tickDirName = path.join(outputDirName, constants.fileNames.tickDir);
 
     if (!hasWorldMapping(world)) {
         throw new Error(`Invalid world: ${world}`);
     }
+
+    // Create the output folders
+    await mkdirp(trackDirName);
+    await mkdirp(tickDirName);
 
     const worldCmd = `execute in ${constants.worlds[world]} run`;
     const mappings = await readMappings(argv.mapping);
