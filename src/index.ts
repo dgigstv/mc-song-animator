@@ -24,6 +24,13 @@ const { argv } = yargs(process.argv.slice(2))
             describe: 'File to load mappings from',
             type: 'string',
         },
+        'namespace': {
+            alias: 'n',
+            default: 'music',
+            demandOption: false,
+            describe: 'Minecraft datapack namespace to execute commands from',
+            type: 'string',
+        },
         'output': {
             alias: 'o',
             demandOption: false,
@@ -76,6 +83,8 @@ function createCache (layerCount: number) {
 async function createTrackFile (mappings: Mappings, trackLength: number, trackFileName: string, worldCmd: string) {
     const trackFile = await fs.open(trackFileName, 'w');
 
+    await trackFile.write(Buffer.from(constants.fileHeader));
+
     try {
         const { track: { start: { x: startX, y: startY, z: startZ }, end: { x: endX, z: endZ } } } = mappings;
 
@@ -93,8 +102,10 @@ async function createTrackFile (mappings: Mappings, trackLength: number, trackFi
     }
 }
 
-async function createPlayFile (songLength: number, playFileName: string, tickDirName: string, fps: number, trackLength: number, worldCmd: string) {
+async function createPlayFile (songLength: number, playFileName: string, tickDirName: string, fps: number, trackLength: number, worldCmd: string, namespace: string) {
     const playFile = await fs.open(playFileName, 'w');
+
+    await playFile.write(Buffer.from(constants.fileHeader));
 
     try {
         for (let i = 0; i < (fps * songLength + trackLength + 1); i++) {
@@ -102,20 +113,22 @@ async function createPlayFile (songLength: number, playFileName: string, tickDir
 
             // Fencepost here - first command should not be a schedule and should not cause the track to move.
             if (i > 0) {
-                toWrite = Buffer.from(`${worldCmd} schedule function custom:${constants.fileNames.tickDir}/tick_${i} ${i}t append\n`, 'utf8');
+                toWrite = Buffer.from(`${worldCmd} schedule function ${namespace}:${constants.fileNames.tickDir}/tick_${i} ${i}t append\n`, 'utf8');
 
                 // Now do the individual tick file.
                 const tickFileName = path.join(tickDirName, `tick_${i}.mcfunction`);
                 const tickFile = await fs.open(tickFileName, 'w');
 
+                await tickFile.write(Buffer.from(constants.fileHeader));
+
                 try {
-                    const trackWrite = Buffer.from(`${worldCmd} function custom:${constants.fileNames.track.dir}/${constants.fileNames.track.name}\n`);
+                    const trackWrite = Buffer.from(`${worldCmd} function ${namespace}:${constants.fileNames.track.dir}/${constants.fileNames.track.name}\n`);
                     await tickFile.write(trackWrite, 0, trackWrite.length);
                 } finally {
                     await tickFile.close();
                 }
             } else {
-                toWrite = Buffer.from(`${worldCmd} function custom:${constants.fileNames.tickDir}/tick_${i}\n`, 'utf8');
+                toWrite = Buffer.from(`${worldCmd} function ${namespace}:${constants.fileNames.tickDir}/tick_${i}\n`, 'utf8');
             }
 
             await playFile.write(toWrite, 0, toWrite.length);
@@ -126,7 +139,7 @@ async function createPlayFile (songLength: number, playFileName: string, tickDir
 }
 
 (async function main () {
-    const { output, trackLength, world } = argv;
+    const { namespace, output, trackLength, world } = argv;
     const outputDirName = path.join(process.cwd(), output);
     const playFileName = path.join(outputDirName, constants.fileNames.main);
     const trackDirName = path.join(outputDirName, constants.fileNames.track.dir);
@@ -151,7 +164,7 @@ async function createPlayFile (songLength: number, playFileName: string, tickDir
     }
 
     await createTrackFile(mappings, trackLength, trackFileName, worldCmd);
-    await createPlayFile(nbs.header.songLength, playFileName, tickDirName, fps, trackLength, worldCmd);
+    await createPlayFile(nbs.header.songLength, playFileName, tickDirName, fps, trackLength, worldCmd, namespace);
 
     const layerCache = createCache(nbs.header.layerCount);
 
@@ -162,6 +175,9 @@ async function createPlayFile (songLength: number, playFileName: string, tickDir
         const musicTick = fps * tick.tick + trackLength;
         const animationFile = await fs.open(path.join(tickDirName, `tick_${animationTick}.mcfunction`), 'a');
         const musicFile = await fs.open(path.join(tickDirName, `tick_${musicTick}.mcfunction`), 'a');
+
+        await animationFile.write(Buffer.from(constants.fileHeader));
+        await musicFile.write(Buffer.from(constants.fileHeader));
 
         try {
             for (const layer of tick.layers) {
