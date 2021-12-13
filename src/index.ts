@@ -195,7 +195,12 @@ async function createPlayFile (songLength: number, playFileName: string, tickDir
                         throw new Error('Key is out of range.');
                     }
 
-                    const pos = positionToString(mappings.noteblocks.slots[slot]);
+                    const mappedPosition = mappings.noteblocks.slots[slot];
+                    if (!mappedPosition) {
+                        throw new Error(`No position data for slot ${slot}.`);
+                    }
+
+                    const pos = positionToString(mappedPosition);
 
                     musicToWrite += `${worldCmd} setblock ${pos} minecraft:note_block[note=${mcKeyConversion}] replace\n`;
                     cache.lastKey = layer.key;
