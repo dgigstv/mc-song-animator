@@ -11,7 +11,7 @@
   "license": "MIT",
   "dependencies": {
     "mkdirp": "^1.0.4",
-    "nbs-viewer": "^0.0.1",
+    "nbs-viewer": "^0.0.2",
     "yargs": "^17.0.1"
   },
   "devDependencies": {
